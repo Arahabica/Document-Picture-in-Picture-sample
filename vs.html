@@ -3,7 +3,7 @@
 
 <head>
   <meta charset="utf-8">
-  <title>Document Picture-in-Picture API sample</title>
+  <title>サブウィンドウ・黒背景色との比較 | Document Picture-in-Picture API</title>
   <style>
     body {
       font-family: Arial, sans-serif;
@@ -23,6 +23,47 @@
     body #pipBtn {
       display: block;
     }
+
+    button {
+      font-size: 1.2rem;
+      margin: 0.5rem;
+      padding: 0.5rem 1rem;
+      border: none;
+      border-radius: 5px;
+      cursor: pointer;
+      transition: background-color 0.2s;
+    }
+
+    .mode-buttons {
+      margin-top: 24px;
+      padding-top: 1rem;
+      border-top: 1px solid #ddd;
+      display: flex;
+      flex-direction: column;
+    }
+
+    .dark-mode .mode-buttons {
+      border-top-color: #444;
+    }
+
+    .mode-btn {
+      background-color: #ffffff;
+      color: #999999;
+      outline: 1px solid #ddd;
+      font-size: 0.9rem;
+      padding: 0.4rem 0.8rem;
+    }
+
+    .dark-mode .mode-btn {
+      background-color: #444;
+      color: #fff;
+    }
+
+    .mode-btn.active-mode {
+      background-color: #999999;
+      color: #ffffff;
+      outline: none;
+    }
   </style>
 </head>
 
@@ -36,6 +77,11 @@
           padding: 2rem;
           position: relative;
           background-color: #f0f0f0;
+        }
+
+        #pip.dark {
+          background-color: #232323;
+          color: #f0f0f0;
         }
 
         #display {
@@ -88,25 +134,36 @@
       </style>
       <button id="pipBtn">
         <!-- ピクチャーインピクチャーのアイコン -->
-        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8 18 L4 18 L4 6 L20 6 L20 8"></path><rect x="12" y="12" width="10" height="8"></rect></svg>
+        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none"
+          stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M8 18 L4 18 L4 6 L20 6 L20 8"></path>
+          <rect x="12" y="12" width="10" height="8"></rect>
+        </svg>
       </button>
       <h1>ストップウォッチ</h1>
       <div id="display">00:00</div>
       <button id="startBtn">スタート</button>
     </div>
   </div>
+  <div class="mode-buttons">
+    <button class="mode-btn active-mode" data-mode="light">ピクチャーインピクチャー</button>
+    <button class="mode-btn" data-mode="subwindow">サブウィンドウ</button>
+    <button class="mode-btn" data-mode="dark">ピクチャーインピクチャー(黒背景)</button>
+  </div>
   <div style="margin-top: 96px;">
-    <a href="./vs">サブウィンドウ・黒背景色との比較</a>
+    <a href="./">Document Picture-in-Picture API sample</a>
   </div>
 
   <script>
     let startTime;
     let elapsedTime = 0;
     let timerInterval;
+    let mode = 'light';
 
     const display = document.getElementById('display');
     const pipBtn = document.getElementById('pipBtn');
     const startBtn = document.getElementById('startBtn');
+    const modeButtons = document.querySelectorAll('.mode-btn');
 
     function formatTime(ms) {
       const pad = (n) => n.toString().padStart(2, '0');
@@ -121,8 +178,10 @@
       const totalElapsed = elapsedTime + (currentTime - startTime);
       display.textContent = formatTime(totalElapsed);
     }
-
-    pipBtn.addEventListener('click', async function () {
+    function openSubWindow() {
+      window.open('./subwindow.html', 'subwindow', 'width=320,height=240');
+    }
+    async function openPicInPic(theme) {
       // 2. Document Picture-in-Picture API がサポートされているか確認
       if (!("documentPictureInPicture" in window)) {
         alert("ピクチャーインピクチャーはサポートされていません");
@@ -130,6 +189,7 @@
       }
       // 3. ピクチャーインピクチャーに表示する要素を取得
       const pipContent = document.querySelector("#pip");
+      pipContent.className = theme;
       // 4. ピクチャーインピクチャーのウィンドウを作成
       const pipWindow = await window.documentPictureInPicture.requestWindow({
         width: pipContent.clientWidth,
@@ -145,8 +205,20 @@
       pipWindow.addEventListener("unload", (event) => {
         const container = document.querySelector("#container");
         const pipContent = event.target.querySelector("#pip");
+        pipContent.className = '';
         container.append(pipContent);
       });
+    }
+
+
+    pipBtn.addEventListener('click', async function () {
+      if (mode === 'light') {
+        openPicInPic('light');
+      } else if (mode === 'dark') {
+        openPicInPic('dark');
+      } else {
+        openSubWindow();
+      }
     });
 
     startBtn.addEventListener('click', function () {
@@ -161,6 +233,14 @@
         startBtn.textContent = 'ストップ';
         startBtn.classList.add('stopped');
       }
+    });
+
+    modeButtons.forEach(button => {
+      button.addEventListener('click', function () {
+        mode = this.dataset.mode;
+        modeButtons.forEach(btn => btn.classList.remove('active-mode'));
+        this.classList.add('active-mode');
+      });
     });
   </script>
 </body>
